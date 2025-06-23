@@ -19,9 +19,27 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService userDetailsService;
+
+
+    // 2. Inject it in the constructor
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, CustomUserDetailsService userDetailsService) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.userDetailsService = userDetailsService;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService); // Tell it how to find users
+        authProvider.setPasswordEncoder(passwordEncoder()); // Tell it how to check passwords
+        return authProvider;
     }
 
     @Bean
@@ -48,7 +66,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/products/**").permitAll()
                         // Secure all other requests
                         .anyRequest().authenticated() // Secure all other requests
-                );
+                )
+                .authenticationProvider(authenticationProvider())
+                // Tell Spring to use our custom filter before the standard username/password filter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
