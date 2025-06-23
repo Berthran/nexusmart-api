@@ -56,14 +56,16 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 2. Define authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Allow public access to the registration endpoint
-                        .requestMatchers(HttpMethod.POST,"/api/auth/login", "/api/users/register", "/api/products").permitAll() // Allow public access to the registration endpoint
-                        // Allow public access to GET User & Product information for now
+                        // Public Endpoints
+                        .requestMatchers(HttpMethod.POST,"/api/auth/login", "/api/users/register").permitAll() // Allow public access to the registration endpoint
                         .requestMatchers(HttpMethod.GET, "/api/users/**", "/api/products/**").permitAll()
-                        // Allow public access to PUT (update) User & Product information for now
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**", "/api/products/**").permitAll()
-                        // Allow public access to DELETE User & Product information
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/products/**").permitAll()
+                        // We can create products publicly for now
+                        .requestMatchers(HttpMethod.POST, "/api/products").permitAll()
+
+                        // PROTECTED ENDPOINTS
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**", "/api/products/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/products/**").authenticated()
+
                         // Secure all other requests
                         .anyRequest().authenticated() // Secure all other requests
                 )
