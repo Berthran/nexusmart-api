@@ -21,7 +21,7 @@ public class ProductService {
 
     public Product createProduct(CreateProductRequestDTO requestDTO){
         // 1. Check for uniqueness before doing anything else
-        Optional<Product> existingProduct = productRepository.findByName(requestDTO.getName());
+        Optional<Product> existingProduct = productRepository.findByNameIgnoreCase(requestDTO.getName());
         if (existingProduct.isPresent()) {
             throw new ResourceConflictException("A product with name '" + requestDTO.getName() + "' already exists.");
         }
