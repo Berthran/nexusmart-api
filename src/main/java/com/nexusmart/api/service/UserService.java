@@ -25,9 +25,7 @@ public class UserService {
         newUser.setEmail(requestDTO.getEmail());
         newUser.setFirstName(requestDTO.getFirstName());
         newUser.setLastName(requestDTO.getLastName());
-
         newUser.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
-
         return userRepository.save(newUser);
     }
 
