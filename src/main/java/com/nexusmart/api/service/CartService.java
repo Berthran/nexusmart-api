@@ -32,7 +32,7 @@ public class CartService {
         this.cartItemRepository = cartItemRepository;
     }
 
-    public void addItemToCart(String userEmail, Long productId, int quantity) {
+    public Cart addItemToCart(String userEmail, Long productId, int quantity) {
         // Step 1. Find the User by their email
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
@@ -67,7 +67,7 @@ public class CartService {
             // We don't need to save the newItem directly because of CascadeType.ALL on the Cart's cartItems list.
         }
 
-        cartRepository.save(cart);
+        return cartRepository.save(cart);
     }
 
 
