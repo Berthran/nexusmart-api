@@ -70,6 +70,23 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
+    public Cart getCartForUser(String userEmail) {
+        // 1. Find the user
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+
+        // 2. Check if a Cart exists for the user and return the Cart else throw an exception
+        return  cartRepository.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart is empty. Add items to cart."));
+
+        // 2b. Or check if a Cart exists for the user and return the Cart else return empty Cart
+//        return  cartRepository.findByUser(user)
+//                .orElseGet(() -> {
+//                        Cart newCart = new Cart();
+//                        newCart.setUser(user);
+
+
+    }
 
 
 }
