@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 @Data // A Lombok shortcut for @Getter, @Setter, @ToString, etc.
 public class CartItemResponseDTO {
+    private Long id;
     private Long productId;
     private String productName;
     private int quantity;
