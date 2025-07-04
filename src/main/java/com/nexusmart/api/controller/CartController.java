@@ -8,10 +8,7 @@ import com.nexusmart.api.service.CartService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,6 +46,30 @@ public class CartController {
         }).collect(Collectors.toList());
 
         responseDTO.setItems(itemDTOs);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @GetMapping
+    public ResponseEntity<CartResponseDTO> getCartForUser(Authentication authentication) {
+        String userEmail = authentication.getName();
+
+        Cart cart = cartService.getCartForUser(userEmail);
+
+        CartResponseDTO responseDTO = new CartResponseDTO();
+        responseDTO.setId(cart.getId());
+        responseDTO.setUserId(cart.getUser().getId());
+
+        List<CartItemResponseDTO> itemDTOS = cart.getCartItems().stream().map(item -> {
+            CartItemResponseDTO itemDTO = new CartItemResponseDTO();
+            itemDTO.setProductId(item.getProduct().getId());
+            itemDTO.setProductName(item.getProduct().getName());
+            itemDTO.setQuantity(item.getQuantity());
+            itemDTO.setPrice(item.getProduct().getPrice());
+            return itemDTO;
+        }).collect(Collectors.toList());
+
+        responseDTO.setItems(itemDTOS);
 
         return ResponseEntity.ok(responseDTO);
     }
