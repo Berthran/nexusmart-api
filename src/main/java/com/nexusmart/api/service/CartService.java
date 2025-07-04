@@ -9,6 +9,7 @@ import com.nexusmart.api.repository.CartItemRepository;
 import com.nexusmart.api.repository.CartRepository;
 import com.nexusmart.api.repository.ProductRepository;
 import com.nexusmart.api.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -32,6 +33,15 @@ public class CartService {
         this.cartItemRepository = cartItemRepository;
     }
 
+
+    @Transactional
+    public Cart getCartForUser(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+        return findOrCreateCartByUser(user);
+    }
+
+    @Transactional
     public Cart addItemToCart(String userEmail, Long productId, int quantity) {
         // Step 1. Find the User by their email
         User user = userRepository.findByEmail(userEmail)
@@ -42,12 +52,7 @@ public class CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
         // Step 3. Find the user's Cart. If they don't have one, create it.
-        Cart cart = cartRepository.findByUser(user)
-                .orElseGet(() -> {
-                    Cart newCart = new Cart();
-                    newCart.setUser(user);
-                    return cartRepository.save(newCart);
-                });
+        Cart cart = findOrCreateCartByUser(user);
 
         // Step 4. Check if the product is already in the cart.
         Optional<CartItem> existingCartItem = cart.getCartItems().stream()
@@ -67,26 +72,16 @@ public class CartService {
             // We don't need to save the newItem directly because of CascadeType.ALL on the Cart's cartItems list.
         }
 
+        // 4. Save the cart. Cascade will handle the items.
         return cartRepository.save(cart);
     }
 
-    public Cart getCartForUser(String userEmail) {
-        // 1. Find the user
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
-
-        // 2. Check if a Cart exists for the user and return the Cart else throw an exception
-        return  cartRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("Cart is empty. Add items to cart."));
-
-        // 2b. Or check if a Cart exists for the user and return the Cart else return empty Cart
-//        return  cartRepository.findByUser(user)
-//                .orElseGet(() -> {
-//                        Cart newCart = new Cart();
-//                        newCart.setUser(user);
-
-
+    public Cart findOrCreateCartByUser(User user) {
+        return cartRepository.findByUser(user)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUser(user);
+                    return cartRepository.save(newCart);
+                });
     }
-
-
 }
