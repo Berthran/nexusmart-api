@@ -38,7 +38,7 @@ public class CartService {
     public Cart getCartForUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
-        return findOrCreateCartByUser(user);
+        return this.findOrCreateCartByUser(user);
     }
 
     @Transactional
@@ -52,7 +52,7 @@ public class CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
         // Step 3. Find the user's Cart. If they don't have one, create it.
-        Cart cart = findOrCreateCartByUser(user);
+        Cart cart = this.findOrCreateCartByUser(user);
 
         // Step 4. Check if the product is already in the cart.
         Optional<CartItem> existingCartItem = cart.getCartItems().stream()
@@ -76,7 +76,66 @@ public class CartService {
         return cartRepository.save(cart);
     }
 
-    public Cart findOrCreateCartByUser(User user) {
+    @Transactional
+    public void removeItemFromCart(String userEmail, Long cartItemId) {
+        // 1. Find the user and their cart
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+
+        // 2. Find the cart. If it doesn't exist, they have no items to remove.
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user "));
+
+        // 3. Find the specific cart item *within the user's cart*
+        CartItem itemToRemove = cart.getCartItems().stream()
+                .filter(item -> item.getId().equals(cartItemId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found with id: " + cartItemId));
+
+        // 3. Remove the item from the list.
+        // Because of 'orphanRemoval = true' on our @OneToMany mapping,
+        // Hibernate will automatically delete the CartItem from the database.
+        cart.getCartItems().remove(itemToRemove);
+
+        // 4. Save the changes
+        //  the explicit .save() call is often not needed for update or delete operations within a transaction.
+        cartRepository.save(cart);
+    }
+
+    @Transactional
+    public Cart updateItemQuantity(String userEmail, Long cartItemId, int newQuantity) {
+        // 1. Find the user and their cart
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+
+        // 2. Find the cart. If it doesn't exist, they have no items to update.
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found for user "));
+
+        // 3. Find the specific cart item *within the user's cart*
+        CartItem itemToUpdate = cart.getCartItems().stream()
+                .filter(item -> item.getId().equals(cartItemId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found with id: " + cartItemId));
+
+        // 4. Get the associated product to check its stock
+        Product product = itemToUpdate.getProduct();
+
+        if (product.getStockQuantity() < newQuantity) {
+            // We throw a clear exception if there isn't enough stock.
+            throw new IllegalArgumentException("Not enough stock for product: " + product.getName() +
+                    ". Requested: " + newQuantity + ", Available: " + product.getStockQuantity());
+        }
+
+        // 5. If stock is sufficient, update the quantity
+        itemToUpdate.setQuantity(newQuantity);
+
+        // 6. Return the cart. No explicit save is needed due to @Transactional.
+        return cart;
+    }
+
+
+    private Cart findOrCreateCartByUser(User user) {
         return cartRepository.findByUser(user)
                 .orElseGet(() -> {
                     Cart newCart = new Cart();

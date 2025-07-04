@@ -3,9 +3,11 @@ package com.nexusmart.api.controller;
 import com.nexusmart.api.dto.AddItemToCartRequestDTO;
 import com.nexusmart.api.dto.CartItemResponseDTO;
 import com.nexusmart.api.dto.CartResponseDTO;
+import com.nexusmart.api.dto.UpdateItemQuantityRequestDTO;
 import com.nexusmart.api.entity.Cart;
 import com.nexusmart.api.service.CartService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -25,37 +27,31 @@ public class CartController {
 
     @PostMapping("/items")
     public ResponseEntity<CartResponseDTO> addItemToCartRequest(@Valid @RequestBody AddItemToCartRequestDTO requestDTO, Authentication authentication) {
-        // 1. Get the current user's email from the Authentication principal
-        String userEmail = authentication.getName();
-
-        // 2. Call the service which now returns the updated cart
-        Cart updatedCart = cartService.addItemToCart(userEmail, requestDTO.getProductId(), requestDTO.getQuantity());
-
-        // 3. Map the Cart Entity to a CartResponseDTO
-        CartResponseDTO responseDTO = new CartResponseDTO();
-        responseDTO.setId(updatedCart.getId());
-        responseDTO.setUserId(updatedCart.getUser().getId());
-
-        List<CartItemResponseDTO> itemDTOs = updatedCart.getCartItems().stream().map(item -> {
-            CartItemResponseDTO itemDTO = new CartItemResponseDTO();
-            itemDTO.setProductId(item.getProduct().getId());
-            itemDTO.setProductName(item.getProduct().getName());
-            itemDTO.setQuantity(item.getQuantity());
-            itemDTO.setPrice(item.getProduct().getPrice());
-            return itemDTO;
-        }).collect(Collectors.toList());
-
-        responseDTO.setItems(itemDTOs);
-
-        return ResponseEntity.ok(responseDTO);
+        Cart updatedCart = cartService.addItemToCart(authentication.getName(), requestDTO.getProductId(), requestDTO.getQuantity());
+        return ResponseEntity.ok(mapCartToResponseDTO(updatedCart));
     }
 
     @GetMapping
     public ResponseEntity<CartResponseDTO> getCartForUser(Authentication authentication) {
-        String userEmail = authentication.getName();
+        Cart cart = cartService.getCartForUser(authentication.getName());
+        return ResponseEntity.ok(mapCartToResponseDTO(cart));
+    }
 
-        Cart cart = cartService.getCartForUser(userEmail);
+    @DeleteMapping("/items/{itemId:[\\d]+}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeItemFromCart(@PathVariable Long itemId, Authentication authentication) {
+        cartService.removeItemFromCart(authentication.getName(), itemId);
+    }
 
+    @PutMapping("/items/{itemId:[\\d]+}")
+    public ResponseEntity<CartResponseDTO> updateItemQuantity(@PathVariable Long itemId, @Valid @RequestBody UpdateItemQuantityRequestDTO requestDTO, Authentication authentication) {
+        Cart cart = cartService.updateItemQuantity(authentication.getName(), itemId, requestDTO.getQuantity());
+
+        return ResponseEntity.ok(mapCartToResponseDTO(cart));
+    }
+
+
+    private CartResponseDTO mapCartToResponseDTO(Cart cart) {
         CartResponseDTO responseDTO = new CartResponseDTO();
         responseDTO.setId(cart.getId());
         responseDTO.setUserId(cart.getUser().getId());
@@ -70,7 +66,6 @@ public class CartController {
         }).collect(Collectors.toList());
 
         responseDTO.setItems(itemDTOS);
-
-        return ResponseEntity.ok(responseDTO);
+        return responseDTO;
     }
 }

@@ -1,6 +1,6 @@
 package com.nexusmart.api.exception;
 
-import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.mvc.annotation.ResponseStatusExceptionResolver;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,6 +71,15 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("error", "Authentication Failed");
         error.put("message", "Invalid username or password"); // Generic, secure message
+        return error;
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Map<String, String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Invalid Request");
+        error.put("message", ex.getMessage());
         return error;
     }
 
