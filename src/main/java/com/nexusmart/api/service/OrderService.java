@@ -3,30 +3,30 @@ package com.nexusmart.api.service;
 import com.nexusmart.api.entity.*;
 import com.nexusmart.api.exception.ResourceNotFoundException;
 import com.nexusmart.api.repository.*;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+
 
 @Service
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
-    private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final CartRepository cartRepository;
     private final CartService cartService;
+    private final UserService userService;
 
 
 
-    public OrderService(CartService cartService, UserRepository userRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, ProductRepository productRepository, CartRepository cartRepository) {
+    public OrderService(CartService cartService, UserService userService, OrderRepository orderRepository, ProductRepository productRepository, CartRepository cartRepository) {
         this.cartService = cartService;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.orderRepository = orderRepository;
-        this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
         this.cartRepository = cartRepository;
 
@@ -35,8 +35,7 @@ public class OrderService {
     @Transactional
     public Order createOrder(String userEmail) {
         // 1. Find the User
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email " + userEmail));
+        User user = userService.findUserByEmail(userEmail);
 
         // 2. Find the user's Cart
         Cart cart = cartService.getCartForUser(userEmail);
@@ -91,5 +90,30 @@ public class OrderService {
 
         // 11. Return the saved order
         return savedOrder;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Order> getOrderForUser(String userEmail, Pageable pageable) {
+        User user = userService.findUserByEmail(userEmail);
+
+        return orderRepository.findByUser(user, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Order getOrderById(String userEmail, Long orderId) {
+        User user = userService.findUserByEmail(userEmail);
+
+        // 2. Find the order by its ID
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // 3. THE CRITICAL OWNERSHIP CHECK
+        // We check if the ID of the user who owns the order is the same as the ID of the user making the request.
+        if (!order.getUser().getId().equals(user.getId())) {
+            // If they don't match, the user is forbidden from seeing this resource.
+            throw new AccessDeniedException("You do not have permission to view this order");
+        }
+
+        return order;
     }
 }
