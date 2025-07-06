@@ -63,7 +63,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/products").permitAll()
 
                         // PROTECTED ENDPOINTS
-                        .requestMatchers(HttpMethod.GET, "/api/cart").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/cart", "/api/orders", "/api/orders/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/cart/items", "/api/orders").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/**", "/api/products/**", "/api/cart/items/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**", "/api/products/**", "/api/cart/items/**").authenticated()
