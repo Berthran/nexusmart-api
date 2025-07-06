@@ -8,8 +8,7 @@ import com.nexusmart.api.exception.ResourceNotFoundException;
 import com.nexusmart.api.repository.CartItemRepository;
 import com.nexusmart.api.repository.CartRepository;
 import com.nexusmart.api.repository.ProductRepository;
-import com.nexusmart.api.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -17,35 +16,33 @@ import java.util.Optional;
 @Service
 public class CartService {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final ProductRepository productRepository;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
 
 
-    public CartService(UserRepository userRepository,
-                       ProductRepository productRepository,
+    public CartService(ProductRepository productRepository,
                        CartRepository cartRepository,
-                       CartItemRepository cartItemRepository) {
-        this.userRepository = userRepository;
+                       CartItemRepository cartItemRepository,
+                       UserService userService) {
+        this.userService = userService;
         this.productRepository = productRepository;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
     }
 
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Cart getCartForUser(String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+        User user = userService.findUserByEmail(userEmail);
         return this.findOrCreateCartByUser(user);
     }
 
     @Transactional
     public Cart addItemToCart(String userEmail, Long productId, int quantity) {
         // Step 1. Find the User by their email
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+        User user = userService.findUserByEmail(userEmail);
 
         // Step 2. Find the Product by its ID.
         Product product = productRepository.findById(productId)
@@ -79,8 +76,7 @@ public class CartService {
     @Transactional
     public void removeItemFromCart(String userEmail, Long cartItemId) {
         // 1. Find the user and their cart
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+        User user = userService.findUserByEmail(userEmail);
 
         // 2. Find the cart. If it doesn't exist, they have no items to remove.
         Cart cart = cartRepository.findByUser(user)
@@ -105,8 +101,7 @@ public class CartService {
     @Transactional
     public Cart updateItemQuantity(String userEmail, Long cartItemId, int newQuantity) {
         // 1. Find the user and their cart
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+        User user = userService.findUserByEmail(userEmail);
 
         // 2. Find the cart. If it doesn't exist, they have no items to update.
         Cart cart = cartRepository.findByUser(user)
