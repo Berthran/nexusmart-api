@@ -8,11 +8,13 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 
 @Getter
@@ -59,8 +61,9 @@ public class User implements UserDetails{
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // For now, we return an empty list. We'll add Roles later.
-        return Collections.emptyList();
+        // By convention, Spring Security roles are strings that start with "ROLE_".
+        // The hasRole("ADMIN") check we will use later looks for "ROLE_ADMIN".
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
     @Override
