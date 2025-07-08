@@ -33,7 +33,7 @@ public class CartService {
     }
 
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Cart getCartForUser(String userEmail) {
         User user = userService.findUserByEmail(userEmail);
         return this.findOrCreateCartByUser(user);
