@@ -58,7 +58,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public Endpoints
                         .requestMatchers(HttpMethod.POST,"/api/auth/login", "/api/users/register").permitAll() // Allow public access to the registration endpoint
-                        .requestMatchers(HttpMethod.GET, "/api/users/**", "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/**", "/api/products", "/api/products/**").permitAll()
                         // We can create products publicly for now
                         .requestMatchers(HttpMethod.POST, "/api/products").permitAll()
 

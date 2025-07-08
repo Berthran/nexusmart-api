@@ -3,9 +3,12 @@ package com.nexusmart.api.service;
 import com.nexusmart.api.dto.CreateProductRequestDTO;
 import com.nexusmart.api.dto.UpdateProductRequestDTO;
 import com.nexusmart.api.entity.Product;
+import com.nexusmart.api.entity.User;
 import com.nexusmart.api.exception.ResourceConflictException;
 import com.nexusmart.api.exception.ResourceNotFoundException;
 import com.nexusmart.api.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -62,4 +65,9 @@ public class ProductService {
         Product existingProduct = this.getProductById(id);
         productRepository.delete(existingProduct);
     }
+
+    public Page<Product> getProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
+    }
+
 }
