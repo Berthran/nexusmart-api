@@ -41,6 +41,7 @@ public class User implements UserDetails{
     @Column(name = "phone_number", length = 30)
     private String phoneNumber;
 
+
     // We are simplifying the address for now, as discussed.
     // If we had a full address object, we might use @Embedded or a separate @OneToMany relationship.
 
@@ -51,6 +52,10 @@ public class User implements UserDetails{
     @Column(name = "updated_at", nullable = false)
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

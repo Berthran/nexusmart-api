@@ -2,7 +2,9 @@ package com.nexusmart.api.service;
 
 import com.nexusmart.api.dto.UpdateUserRequestDTO;
 import com.nexusmart.api.dto.UserRegistrationRequestDTO;
+import com.nexusmart.api.entity.Role;
 import com.nexusmart.api.entity.User;
+import com.nexusmart.api.exception.ResourceConflictException;
 import com.nexusmart.api.exception.ResourceNotFoundException;
 import com.nexusmart.api.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,11 +23,16 @@ public class UserService {
     }
 
     public User createUser(UserRegistrationRequestDTO requestDTO) {
+        // Check for existing user by email
+        if (userRepository.findByEmail(requestDTO.getEmail()).isPresent()) {
+            throw new ResourceConflictException("Account with email'" + requestDTO.getEmail() + "' already exists.");
+        }
         User newUser = new User();
         newUser.setEmail(requestDTO.getEmail());
         newUser.setFirstName(requestDTO.getFirstName());
         newUser.setLastName(requestDTO.getLastName());
         newUser.setPasswordHash(passwordEncoder.encode(requestDTO.getPassword()));
+        newUser.setRole(Role.USER);
         return userRepository.save(newUser);
     }
 
