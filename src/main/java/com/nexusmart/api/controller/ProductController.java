@@ -1,6 +1,7 @@
 package com.nexusmart.api.controller;
 
 import com.nexusmart.api.dto.CreateProductRequestDTO;
+import com.nexusmart.api.dto.PagedResponseDTO;
 import com.nexusmart.api.dto.ProductResponseDTO;
 import com.nexusmart.api.dto.UpdateProductRequestDTO;
 import com.nexusmart.api.entity.Product;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
@@ -23,12 +26,21 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductResponseDTO>> getProducts(Pageable pageable) {
+    public ResponseEntity<PagedResponseDTO<ProductResponseDTO>> getProducts(Pageable pageable) {
         Page<Product> productPage = productService.getProducts(pageable);
 
-        Page<ProductResponseDTO> responseDTO = productPage.map(this::mapProductToResponseDTO);
-
-        return ResponseEntity.ok(responseDTO);
+        List<ProductResponseDTO> productDTOs = productPage.stream()
+                .map(this::mapProductToResponseDTO)
+                .toList();
+        PagedResponseDTO<ProductResponseDTO> response = new PagedResponseDTO<>(
+                productDTOs,
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.isLast()
+        );
+        return ResponseEntity.ok(response);
 
     }
 

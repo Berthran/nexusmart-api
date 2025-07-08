@@ -2,13 +2,13 @@ package com.nexusmart.api.controller;
 
 import com.nexusmart.api.dto.OrderItemResponseDTO;
 import com.nexusmart.api.dto.OrderResponseDTO;
+import com.nexusmart.api.dto.PagedResponseDTO;
 import com.nexusmart.api.entity.Order;
 import com.nexusmart.api.service.OrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,17 +32,24 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<OrderResponseDTO>> getOrderHistory(Authentication authentication, Pageable pageable) {
+    public ResponseEntity<PagedResponseDTO<OrderResponseDTO>> getOrderHistory(Authentication authentication, Pageable pageable) {
         // 1. Get the current user's email
         String userEmail = authentication.getName();
         // 2. Call the service to get a Page of Order entities
         Page<Order> orderPage = orderService.getOrderForUser(userEmail, pageable);
-        // 3. Map the Page<Order> to a Page<OrderResponseDTO>
-        // Page<OrderResponseDTO> responseDTOPage = orderPage.map(this::mapOrderToResponseDTO);
-        Page<OrderResponseDTO> responseDTOPage = orderPage.map(order -> {
-            return mapOrderToResponseDTO(order);
-        });
-        return ResponseEntity.ok(responseDTOPage);
+        //
+        List<OrderResponseDTO> orderDTOs = orderPage.getContent().stream()
+                .map(this::mapOrderToResponseDTO)
+                .toList();
+        PagedResponseDTO<OrderResponseDTO> response = new PagedResponseDTO<>(
+                orderDTOs,
+                orderPage.getNumber(),
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages(),
+                orderPage.isLast()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{orderId:[\\d]+}")
