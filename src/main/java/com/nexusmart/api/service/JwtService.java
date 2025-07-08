@@ -5,10 +5,12 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.util.Collection;
 import java.util.Date;
 
 @Service
@@ -25,13 +27,14 @@ public class JwtService {
     public String generateToken(Authentication authentication) {
         // Get the username (email) from the authenticated principal
         String username = authentication.getName();
+        // Get the user's roles (e.g., "ROLE_ADMIN, "ROLE_USER")
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         System.out.println("Username: " + username);
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         // 3. Reconstitute the secret key from the Base64 encoded string
-//        SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
         SecretKey key = getSigningKey();
         System.out.println("Secret key: " + key);
 
@@ -40,6 +43,7 @@ public class JwtService {
                 .subject(username)
                 .issuedAt(now)
                 .expiration(expiryDate)
+                .claim("roles", authorities)
                 .signWith(key)
                 .compact();
     }
