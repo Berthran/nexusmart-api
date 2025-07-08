@@ -59,12 +59,14 @@ public class SecurityConfig {
                         // PUBLIC ENDPOINTS: Anyone can access these
                         .requestMatchers(HttpMethod.POST,"/api/auth/login", "/api/users/register").permitAll() // Allow public access to the registration endpoint
                         .requestMatchers(HttpMethod.GET,  "/api/products", "/api/products/**").permitAll()
+                        // ADD THIS LINE to allow access to the documentation
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         // AUTHENTICATED USER ENDPOINTS: Any logged-in user can access these
                         .requestMatchers(HttpMethod.GET, "/api/cart", "/api/orders", "/api/orders/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/cart/items", "/api/orders").authenticated()
                         .requestMatchers(HttpMethod.PUT,  "/api/cart/items/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/cart/items/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/cart/items/**").authenticated()
 
                         // We will add logic for a user to view/update their own profile later
                         .requestMatchers("/api/users/**").hasRole("ADMIN") // For now, only ADMINs can see/modify user lists
